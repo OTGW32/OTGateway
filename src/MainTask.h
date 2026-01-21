@@ -1,5 +1,12 @@
 #include <Blinker.h>
-
+#ifdef NODO
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <EthernetESP32.h>
+#include <OpenThermTask.h>
+extern EthernetClass ETH;
+extern Adafruit_SSD1306 display;
+#endif
 using namespace NetworkUtils;
 
 extern NetworkMgr* network;
@@ -26,6 +33,36 @@ public:
   }
 
 protected:
+#ifdef NODO
+  uint8_t displayPage = 0;
+  unsigned long lastDisplayUpdate = 0;
+  void updateOLED() {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    
+    switch (displayPage) {
+      case 0:
+        display.println(F("--- NETWORK ---"));
+        display.println(WIRED_ETHERNET_PRESENT && Ethernet.linkStatus() ? F("CONN: ETHERNET") : F("CONN: WIFI"));
+        display.print(F("IP: ")); display.println(Ethernet.localIP());
+        break;
+      case 1:
+        display.println(F("--- BOILER ---"));
+        // Boiler Temperature
+        display.print(F("Temp: ")); 
+        display.print(vars.slave.heating.currentTemp); // In OTGateway, this is the standard path
+        display.println("C");
+
+        // Flame Status
+        display.print(F("Flame: ")); 
+        display.println(vars.slave.flame ? "ACTIVE" : "OFF");
+        break;
+    }
+    display.display();
+  }
+#endif
   enum class PumpStartReason {NONE, HEATING, ANTISTUCK};
 
   Blinker* blinker = nullptr;
@@ -63,6 +100,20 @@ protected:
   void setup() {}
 
   void loop() {
+#ifdef NODO
+    unsigned long now = millis();
+    int btn_state;
+    // Check if button was pressed to swap pages
+    if (xQueueReceive(button_press_queue, &btn_state, 0) && btn_state == LOW) {
+      displayPage = (displayPage + 1) % 2; // Cycle 2 pages
+      updateOLED();
+    }
+    // Auto-refresh every 2 seconds
+    if (now - lastDisplayUpdate > 2000) {
+      updateOLED();
+      lastDisplayUpdate = now;
+    }
+#endif
     network->loop();
 
     if (fsNetworkSettings.tick() == FD_WRITE) {

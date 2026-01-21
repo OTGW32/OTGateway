@@ -1,3 +1,5 @@
+#ifndef CUSTOM_OPENTHERM_H
+#define CUSTOM_OPENTHERM_H
 #include <Arduino.h>
 #include <OpenTherm.h>
 
@@ -193,3 +195,4 @@ protected:
   BeforeSendRequestCallback beforeSendRequestCallback;
   AfterSendRequestCallback afterSendRequestCallback;
 };
+#endif

@@ -1,3 +1,5 @@
+#ifndef OPENTHERM_TASK_H
+#define OPENTHERM_TASK_H
 #include <CustomOpenTherm.h>
 extern FileData fsSettings;
 
@@ -2621,3 +2623,4 @@ protected:
     return true;
   }
 };
+#endif
